@@ -1,8 +1,6 @@
 CC      = gcc
 CFLAGS  = -fPIC -Wall -Wextra -Iinclude
-LDFLAGS = -lcurl -ljansson
-
-
+LDFLAGS = -lcurl -ljansson    
 
 LIB_MAJOR = 1
 LIB_VERSION = 1.0.0
@@ -29,14 +27,13 @@ $(LIB_LINK): $(LIB_SONAME)
 	ln -sf $(LIB_SONAME) $(LIB_LINK)
 
 $(BIN_NAME): $(SRC_BIN) $(LIB_REAL)
-	$(CC) $(CFLAGS) -o $@ $(SRC_BIN) -L. -lalttest $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(SRC_BIN) -L. -lalttest $(LDFLAGS) -Wl,-rpath,\$$ORIGIN
 
 $(TEST_BIN): src/test.c $(LIB_REAL)
 	$(CC) $(CFLAGS) -o $@ src/test.c -L. -lalttest $(LDFLAGS)
 
 clean:
 	rm -f $(LIB_REAL) $(LIB_SONAME) $(LIB_LINK) $(BIN_NAME) $(TEST_BIN)
-
 
 PREFIX ?= /usr/local
 LIBDIR = $(PREFIX)/lib64

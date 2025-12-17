@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <jansson.h>
+#include <curl/curl.h>
+#include <ctype.h>
 
 __attribute__((constructor))
 void alttest_global_init(void) {
@@ -24,7 +27,7 @@ static size_t alttest_write_cb(void *contents, size_t size, size_t nmemb, void *
 
     char *ptr = realloc(buf->data, buf->size + real_size + 1);
     if (!ptr) {
-        return 0; // Ошибка realloc
+        return 0;
     }
 
     buf->data = ptr;
@@ -35,6 +38,35 @@ static size_t alttest_write_cb(void *contents, size_t size, size_t nmemb, void *
     return real_size;
 }
 
+// RPM-совместимое сравнение версий 
+static int rpmvercmp(const char *a, const char *b) {
+    const char *p1 = a, *p2 = b;
+    while (*p1 || *p2) {
+        while (*p1 == *p2 && *p1) { p1++; p2++; }
+        if (!*p1) return -1;
+        if (!*p2) return 1;
+        
+        if (isdigit((unsigned char)*p1) && isdigit((unsigned char)*p2)) {
+            unsigned long n1 = 0, n2 = 0;
+            while (isdigit((unsigned char)*p1)) n1 = n1 * 10 + (*p1++ - '0');
+            while (isdigit((unsigned char)*p2)) n2 = n2 * 10 + (*p2++ - '0');
+            if (n1 != n2) return (n1 > n2) ? 1 : -1;
+        } else {
+            unsigned char c1 = (unsigned char)*p1++;
+            unsigned char c2 = (unsigned char)*p2++;
+            if (c1 != c2) return (c1 > c2) ? 1 : -1;
+        }
+    }
+    return 0;
+}
+
+static int rpm_cmp(const char* version1, const char* release1, 
+                   const char* version2, const char* release2) {
+    char evr1[512], evr2[512];
+    snprintf(evr1, sizeof(evr1), "%s-%s", version1 ? version1 : "", release1 ? release1 : "");
+    snprintf(evr2, sizeof(evr2), "%s-%s", version2 ? version2 : "", release2 ? release2 : "");
+    return rpmvercmp(evr1, evr2);
+}
 
 int alttest_http_get(const char* url, char** response) {
     if (!url || !response) {
@@ -85,7 +117,6 @@ int alttest_http_get(const char* url, char** response) {
     return 0; 
 }
 
-
 int alttest_fetch_branch(const char* branch, const char* arch, char** packages_json) {
     if (!branch || !arch || !packages_json) {
         return -1;
@@ -99,7 +130,6 @@ int alttest_fetch_branch(const char* branch, const char* arch, char** packages_j
         printf("Error: URL too long for branch '%s', arch '%s'\n", branch, arch);
         return -1;
     }
-
     
     int status = alttest_http_get(url, packages_json);
     if (status != 0) {
@@ -148,7 +178,6 @@ int alttest_compare_branches(const char* branch1,
     size_t count1 = json_array_size(arr1);
     size_t count2 = json_array_size(arr2);
 
-    // Карты name -> {version, release}
     json_t *map1 = json_object(), *map2 = json_object();
 
     for (size_t i = 0; i < count1; i++) {
@@ -175,8 +204,9 @@ int alttest_compare_branches(const char* branch1,
         }
     }
 
-    // СРАВНЕНИЕ
-    json_t *only1 = json_array(), *only2 = json_array(), *newer1 = json_array();
+    // СРАВНЕНИЕ с RPM алгоритмом!
+    json_t *only1 = json_array(), *only2 = json_array(); 
+    json_t *newer1 = json_array(), *newer2 = json_array();
 
     const char *key; json_t *val;
     json_object_foreach(map1, key, val) {
@@ -185,17 +215,26 @@ int alttest_compare_branches(const char* branch1,
             json_array_append_new(only1, json_string(key));
             continue;
         }
+        
         const char *v1 = json_string_value(json_object_get(val, "version"));
         const char *r1 = json_string_value(json_object_get(val, "release"));
         const char *v2 = json_string_value(json_object_get(info2, "version"));
         const char *r2 = json_string_value(json_object_get(info2, "release"));
-        int v_cmp = strcmp(v1 ? v1 : "", v2 ? v2 : "");
-        int r_cmp = strcmp(r1 ? r1 : "", r2 ? r2 : "");
-        if (v_cmp > 0 || (v_cmp == 0 && r_cmp > 0)) {
-            char vr1[256], vr2[256];
-            snprintf(vr1, sizeof(vr1), "%s-%s", v1 ? v1 : "", r1 ? r1 : "");
-            snprintf(vr2, sizeof(vr2), "%s-%s", v2 ? v2 : "", r2 ? r2 : "");
-            json_array_append_new(newer1, json_pack("{s:s,s:s,s:s}", "name", key, "branch1", vr1, "branch2", vr2));
+        
+        int cmp = rpm_cmp(v1, r1, v2, r2);
+        
+        char vr1[512], vr2[512];
+        snprintf(vr1, sizeof(vr1), "%s-%s", v1 ? v1 : "", r1 ? r1 : "");
+        snprintf(vr2, sizeof(vr2), "%s-%s", v2 ? v2 : "", r2 ? r2 : "");
+        
+        if (cmp > 0) {
+            // branch1 новее
+            json_array_append_new(newer1, json_pack("{s:s,s:s,s:s}", 
+                "name", key, "branch1", vr1, "branch2", vr2));
+        } else if (cmp < 0) {
+            // branch2 новее
+            json_array_append_new(newer2, json_pack("{s:s,s:s,s:s}", 
+                "name", key, "branch1", vr1, "branch2", vr2));
         }
     }
 
@@ -205,13 +244,10 @@ int alttest_compare_branches(const char* branch1,
         }
     }
 
-    // Освобождение
     json_decref(root1); json_decref(root2);
-    json_decref(arr1); json_decref(arr2);
     json_decref(map1); json_decref(map2);
 
-    // ФИНАЛЬНЫЙ JSON с total_branch1/2
-    json_t *out = json_pack("{s:s,s:s,s:s,s:i,s:i,s:o,s:o,s:o}",
+    json_t *out = json_pack("{s:s,s:s,s:s,s:i,s:i,s:o,s:o,s:o,s:o}",
         "branch1", branch1,
         "branch2", branch2,
         "arch", arch,
@@ -219,7 +255,8 @@ int alttest_compare_branches(const char* branch1,
         "total_branch2", (int)count2,
         "only_in_branch1", only1,
         "only_in_branch2", only2,
-        "newer_in_branch1", newer1
+        "newer_in_branch1", newer1,
+        "newer_in_branch2", newer2
     );
 
     *result_json = json_dumps(out, JSON_INDENT(2));
@@ -227,4 +264,3 @@ int alttest_compare_branches(const char* branch1,
 
     return (*result_json) ? 0 : -3;
 }
-
