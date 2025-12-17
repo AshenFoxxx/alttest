@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -fPIC -Wall -Wextra -std=c99 -O2 -Iinclude
-LDFLAGS = -lcurl -ljansson -lrpm -lrpmio    
+LDFLAGS = -lcurl -ljansson   
 
 LIB_MAJOR = 1
 LIB_VERSION = 1.0.0

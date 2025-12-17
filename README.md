@@ -26,7 +26,7 @@ sudo podman run --rm alttest
 ```
 ### Custom branches + save JSON locally
 ```bash
-sudo podman run --rm -v $(pwd):/app alttest x86_64 sisyphus p10
+make && sudo podman run --rm -v $(pwd):/app alttest x86_64 sisyphus p10
 ls -lh comparison.json # 3.8MB JSON result!
 ```
 
