@@ -20,7 +20,7 @@ Shared library + CLI utility for comparing binary packages between ALT Linux bra
 ```bash
 sudo podman build -t alttest . # or docker build
 ```
-### Test sisyphus vs p11
+### Test sisyphus vs p11 (x86_64)
 ```bash
 sudo podman run --rm alttest
 ```
