@@ -14,7 +14,7 @@ void print_error(const char* msg) {
 }
 
 void print_stats(const char* branch1, const char* branch2, char* result_json) {
-    // Сохраняем в файл
+    // Save it to a file
     FILE *f = fopen("comparison.json", "w");
     if (f) {
         fputs(result_json, f);
@@ -22,7 +22,7 @@ void print_stats(const char* branch1, const char* branch2, char* result_json) {
         printf("Saved: comparison.json (%zu bytes)\n", strlen(result_json));
     }
     
-    // Парсим статистику
+    // Parsing statistics
     json_error_t err;
     json_t *root = json_loads(result_json, 0, &err);
     if (!root || !json_is_object(root)) {
@@ -31,7 +31,7 @@ void print_stats(const char* branch1, const char* branch2, char* result_json) {
         return;
     }
 
-    // Получаем поля напрямую из объекта
+    // Getting the fields directly from the object
     json_int_t total1 = 0, total2 = 0;
     json_t *only1 = NULL, *only2 = NULL, *newer1 = NULL;
     

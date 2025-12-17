@@ -35,7 +35,7 @@ ls -lh comparison.json # 3.8MB JSON result!
 ```bash
 sudo apt-get install gcc make pkg-config libjansson-devel libcurl-devel
 ```
-- Build & Install (FHS)
+- Build & Install
 
 ```bash
 git clone <repo>
@@ -53,22 +53,6 @@ alttest x86_64 sisyphus p11
 
 ```bash
 sudo apt-get install gcc make pkg-config libjansson-devel libcurl-devel
-```
-Build & Install (FHS)
-```bash
-git clone <repo>
-cd alttest
-make
-sudo make install
-```
-Usage
-
-```bash
-alttest x86_64 sisyphus p11
-```
-Interactive mode (no args)
-```
-alttest
 ```
 ## Usage
 
@@ -100,17 +84,27 @@ Enter branch2: p11
 ## JSON Structure
 ```json
 {
-"branch1": "sisyphus",
-"branch2": "p11",
-"arch": "x86_64",
-"total_branch1": 38315,
-"total_branch2": 36018,
-"only_in_branch1": ["pkg1", "pkg2"],
-"only_in_branch2": ["pkg3"],
-"newer_in_branch1": [
-{"name": "glibc", "branch1": "2.38-alt1", "branch2": "2.37-alt2"}
-]
+    "branch1": "sisyphus",
+    "branch2": "p11",
+    "arch": "x86_64",
+    "total_branch1": 38315,
+    "total_branch2": 36018,
+    "only_in_branch1": [
+        "pkg1",
+        "pkg2"
+    ],
+    "only_in_branch2": [
+        "pkg3"
+    ],
+    "newer_in_branch1": [
+        {
+            "name": "glibc",
+            "branch1": "2.38-alt1",
+            "branch2": "2.37-alt2"
+        }
+    ]
 }
+
 ```
 
 

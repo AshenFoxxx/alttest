@@ -38,18 +38,19 @@ static size_t alttest_write_cb(void *contents, size_t size, size_t nmemb, void *
     return real_size;
 }
 
-// RPM-совместимое сравнение версий для ALT Linux
+// RPM-compatible version comparison for ALT Linux
 static int rpmvercmp(const char *a, const char *b) {
-    const char *p1 = a, *p2 = b;
+	const char *p1 = a, *p2 = b;
     
     while (*p1 || *p2) {
-        // Пропускаем ИДЕНТИЧНЫЕ символы
+        // Skipping IDENTICAL characters
         while (*p1 == *p2 && *p1) { p1++; p2++; }
         
+		if(!*p1 && !*p2) return 0;
         if (!*p1) return -1;
         if (!*p2) return 1;
         
-        // Пропуск разделителей (только один за раз)
+        // Skip separators (only one at a time)
         if (*p1 == '.' || *p1 == '-') { p1++; continue; }
         if (*p2 == '.' || *p2 == '-') { p2++; continue; }
         
@@ -67,21 +68,15 @@ static int rpmvercmp(const char *a, const char *b) {
     return 0;
 }
 
-
-
-
-
-
 static int rpm_cmp(const char* v1, const char* r1, const char* v2, const char* r2) {
-    // 1. СРАВНИВАЕМ VERSION ПЕРВЫМ!
+    // 1. COMPARING VERSION FIRST!
 	
     int ver_cmp = rpmvercmp(v1 ? v1 : "", v2 ? v2 : "");
     if (ver_cmp != 0) return ver_cmp;
     
-    // 2. Если VERSION равны - сравниваем RELEASE
+    // 2. If VERSION is equal, compare RELEASE
     return rpmvercmp(r1 ? r1 : "", r2 ? r2 : "");
 }
-
 
 int alttest_http_get(const char* url, char** response) {
     if (!url || !response) {
@@ -219,7 +214,7 @@ int alttest_compare_branches(const char* branch1,
         }
     }
 
-    // ✅ СРАВНЕНИЕ с RPM алгоритмом!
+    // COMPARISON with the RPM algorithm!
     json_t *only1 = json_array(), *only2 = json_array(); 
     json_t *newer1 = json_array();
 
@@ -239,7 +234,7 @@ int alttest_compare_branches(const char* branch1,
         int cmp = rpm_cmp(v1, r1, v2, r2);
         
         if (cmp > 0) {
-        // Только branch1 новее
+        // Only branch1 is newer
         char vr1[512], vr2[512];
         snprintf(vr1, sizeof(vr1), "%s-%s", v1 ? v1 : "", r1 ? r1 : "");
         snprintf(vr2, sizeof(vr2), "%s-%s", v2 ? v2 : "", r2 ? r2 : "");
@@ -273,7 +268,7 @@ int alttest_compare_branches(const char* branch1,
 
     return (*result_json) ? 0 : -3;
 }
-// Public API для тестов 
+// Public API for tests
 int alttest_rpmvercmp(const char *a, const char *b) {
     return rpmvercmp(a, b);
 }

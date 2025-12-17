@@ -4,7 +4,7 @@
 #include <curl/curl.h>
 #include <jansson.h>
 
-// Структура для представления информации о пакете
+// A structure for presenting information about a package
 typedef struct {
     char *name;
     char *version;
@@ -12,17 +12,17 @@ typedef struct {
     char *arch;
 } package_info_t;
 
-// Структура для результата сравнения по одной архитектуре
+// The structure for the result of a comparison on the same architecture
 typedef struct {
     json_t *only_in_branch1;  // json_array
     json_t *only_in_branch2;  // json_array
     json_t *newer_in_branch1; // json_array
 } comparison_result_t;
 
-// Функции для работы с HTTP 
+// Functions for working with HTTP
 int alttest_http_get(const char* url, char** response);
 
-// Функции для работы с API 
+// Functions for working with the API
 int alttest_fetch_branch(const char* branch, const char* arch, char** packages_json);
 
 int alttest_compare_branches(const char* branch1,

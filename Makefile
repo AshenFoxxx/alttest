@@ -10,7 +10,7 @@ LIB_SONAME = libalttest.so.$(LIB_MAJOR)
 LIB_LINK  = libalttest.so
 
 BIN_NAME  = alttest
-TEST_BIN  = tests  # ← ТВОЕ ИМЯ ОСТАЕТСЯ!
+TEST_BIN  = tests  
 
 SRC_LIB  = src/lib.c
 SRC_BIN  = src/main.c
@@ -30,17 +30,14 @@ $(LIB_LINK): $(LIB_SONAME)
 $(BIN_NAME): $(SRC_BIN) $(LIB_LINK)
 	$(CC) $(CFLAGS) -o $@ $(SRC_BIN) -L. -lalttest $(LDFLAGS) -Wl,-rpath,'$$ORIGIN'
 
-# ✅ ТВОЯ ЦЕЛЬ tests ОСТАЕТСЯ!
 $(TEST_BIN): $(SRC_TEST) $(LIB_LINK)
 	$(CC) $(CFLAGS) -o $@ $(SRC_TEST) -L. -lalttest $(LDFLAGS) -Wl,-rpath,'$$ORIGIN'
 
-# ✅ НОВЫЕ УДОБНЫЕ ЦЕЛИ (не конфликтуют)
 run-tests: $(TEST_BIN)
 	LD_LIBRARY_PATH=. ./$(TEST_BIN)
 
 check: run-tests
 
-# ✅ ПРАВИЛЬНАЯ УСТАНОВКА
 PREFIX ?= /usr/local
 LIBDIR = $(PREFIX)/lib64
 BINDIR = $(PREFIX)/bin

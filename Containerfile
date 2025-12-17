@@ -9,6 +9,6 @@ COPY . .
 
 RUN make clean && make
 
-# JSON array - аргументы передаются правильно!
+# JSON array - arguments are passed correctly!
 ENTRYPOINT ["./alttest"]
 CMD ["x86_64", "sisyphus", "p11"]
