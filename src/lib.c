@@ -127,18 +127,70 @@ int alttest_compare_branches(const char* branch1,
     char *json2 = NULL;
     rc = alttest_fetch_branch(branch2, arch, &json2);
     if (rc != 0) {
-        free(json1);
         printf("Error: Failed to fetch %s: %d\n", branch2, rc);
+        free(json1);
         return rc;
     }
 
-    printf("Info: %s: %zu bytes, %s: %zu bytes\n", 
-           branch1, strlen(json1), branch2, strlen(json2));
+    // Разбираем корневые объекты
+    json_error_t err1, err2;
+    json_t *root1 = json_loads(json1, 0, &err1);
+    json_t *root2 = json_loads(json2, 0, &err2);
 
     free(json1);
     free(json2);
 
-    *result_json = strdup("{\"status\":\"HTTP requests work, JSON received\"}");
+    if (!root1 || !json_is_object(root1)) {
+        fprintf(stderr, "JSON parse error for %s: %s (line %d col %d)\n",
+                branch1, err1.text, err1.line, err1.column);
+        if (root1) json_decref(root1);
+        if (root2) json_decref(root2);
+        return -2;
+    }
+    if (!root2 || !json_is_object(root2)) {
+        fprintf(stderr, "JSON parse error for %s: %s (line %d col %d)\n",
+                branch2, err2.text, err2.line, err2.column);
+        json_decref(root1);
+        if (root2) json_decref(root2);
+        return -2;
+    }
+
+    // Достаём массивы packages
+    json_t *arr1 = json_object_get(root1, "packages");
+    json_t *arr2 = json_object_get(root2, "packages");
+
+    if (!arr1 || !json_is_array(arr1) || !arr2 || !json_is_array(arr2)) {
+        fprintf(stderr, "Error: 'packages' field missing or not array\n");
+        json_decref(root1);
+        json_decref(root2);
+        return -2;
+    }
+
+    size_t count1 = json_array_size(arr1);
+    size_t count2 = json_array_size(arr2);
+
+    printf("Info: %s: %zu packages, %s: %zu packages\n",
+           branch1, count1, branch2, count2);
+
+    // Формируем простой результат (для этого этапа)
+    json_t *out = json_pack(
+        "{s:s, s:s, s:s, s:i, s:i}",
+        "branch1",        branch1,
+        "branch2",        branch2,
+        "arch",           arch,
+        "count_branch1",  (int)count1,
+        "count_branch2",  (int)count2
+    );
+
+    *result_json = json_dumps(out, JSON_INDENT(2));
+    json_decref(out);
+    json_decref(root1);
+    json_decref(root2);
+
+    if (!*result_json) return -3;
     return 0;
 }
+
+
+
 
