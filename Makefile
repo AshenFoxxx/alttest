@@ -1,4 +1,3 @@
-
 CC      = gcc
 CFLAGS  = -fPIC -Wall -Wextra -Iinclude
 LDFLAGS = -lcurl -ljansson
