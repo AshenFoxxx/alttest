@@ -38,13 +38,20 @@ static size_t alttest_write_cb(void *contents, size_t size, size_t nmemb, void *
     return real_size;
 }
 
-// RPM-совместимое сравнение версий 
+// RPM-совместимое сравнение версий для ALT Linux
 static int rpmvercmp(const char *a, const char *b) {
     const char *p1 = a, *p2 = b;
+    
     while (*p1 || *p2) {
+        // Пропускаем ИДЕНТИЧНЫЕ символы
         while (*p1 == *p2 && *p1) { p1++; p2++; }
+        
         if (!*p1) return -1;
         if (!*p2) return 1;
+        
+        // Пропуск разделителей (только один за раз)
+        if (*p1 == '.' || *p1 == '-') { p1++; continue; }
+        if (*p2 == '.' || *p2 == '-') { p2++; continue; }
         
         if (isdigit((unsigned char)*p1) && isdigit((unsigned char)*p2)) {
             unsigned long n1 = 0, n2 = 0;
@@ -60,13 +67,21 @@ static int rpmvercmp(const char *a, const char *b) {
     return 0;
 }
 
-static int rpm_cmp(const char* version1, const char* release1, 
-                   const char* version2, const char* release2) {
-    char evr1[512], evr2[512];
-    snprintf(evr1, sizeof(evr1), "%s-%s", version1 ? version1 : "", release1 ? release1 : "");
-    snprintf(evr2, sizeof(evr2), "%s-%s", version2 ? version2 : "", release2 ? release2 : "");
-    return rpmvercmp(evr1, evr2);
+
+
+
+
+
+int rpm_cmp(const char* v1, const char* r1, const char* v2, const char* r2) {
+    // 1. СРАВНИВАЕМ VERSION ПЕРВЫМ!
+	
+    int ver_cmp = rpmvercmp(v1 ? v1 : "", v2 ? v2 : "");
+    if (ver_cmp != 0) return ver_cmp;
+    
+    // 2. Если VERSION равны - сравниваем RELEASE
+    return rpmvercmp(r1 ? r1 : "", r2 ? r2 : "");
 }
+
 
 int alttest_http_get(const char* url, char** response) {
     if (!url || !response) {
@@ -204,7 +219,7 @@ int alttest_compare_branches(const char* branch1,
         }
     }
 
-    // СРАВНЕНИЕ с RPM алгоритмом!
+    // ✅ СРАВНЕНИЕ с RPM алгоритмом!
     json_t *only1 = json_array(), *only2 = json_array(); 
     json_t *newer1 = json_array(), *newer2 = json_array();
 
