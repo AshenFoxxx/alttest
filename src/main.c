@@ -33,14 +33,13 @@ void print_stats(const char* branch1, const char* branch2, char* result_json) {
 
     // Получаем поля напрямую из объекта
     json_int_t total1 = 0, total2 = 0;
-    json_t *only1 = NULL, *only2 = NULL, *newer1 = NULL, *newer2 = NULL;
+    json_t *only1 = NULL, *only2 = NULL, *newer1 = NULL;
     
     total1 = json_integer_value(json_object_get(root, "total_branch1"));
     total2 = json_integer_value(json_object_get(root, "total_branch2"));
     only1 = json_object_get(root, "only_in_branch1");
     only2 = json_object_get(root, "only_in_branch2");
     newer1 = json_object_get(root, "newer_in_branch1");
-    newer2 = json_object_get(root, "newer_in_branch2");
 
     printf("STATS:\n");
     printf("  %-12s: %6d pkgs\n", branch1, (int)total1);
@@ -51,8 +50,6 @@ void print_stats(const char* branch1, const char* branch2, char* result_json) {
            only2 ? json_array_size(only2) : 0);
     printf("  %-12s: %6zu pkgs\n", "newer_in_b1", 
            newer1 ? json_array_size(newer1) : 0);
-    printf("  %-12s: %6zu pkgs\n", "newer_in_b2", 
-           newer2 ? json_array_size(newer2) : 0);
     
     json_decref(root);
 }

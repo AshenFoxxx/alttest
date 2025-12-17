@@ -72,7 +72,7 @@ static int rpmvercmp(const char *a, const char *b) {
 
 
 
-int rpm_cmp(const char* v1, const char* r1, const char* v2, const char* r2) {
+static int rpm_cmp(const char* v1, const char* r1, const char* v2, const char* r2) {
     // 1. СРАВНИВАЕМ VERSION ПЕРВЫМ!
 	
     int ver_cmp = rpmvercmp(v1 ? v1 : "", v2 ? v2 : "");
@@ -221,7 +221,7 @@ int alttest_compare_branches(const char* branch1,
 
     // ✅ СРАВНЕНИЕ с RPM алгоритмом!
     json_t *only1 = json_array(), *only2 = json_array(); 
-    json_t *newer1 = json_array(), *newer2 = json_array();
+    json_t *newer1 = json_array();
 
     const char *key; json_t *val;
     json_object_foreach(map1, key, val) {
@@ -238,19 +238,14 @@ int alttest_compare_branches(const char* branch1,
         
         int cmp = rpm_cmp(v1, r1, v2, r2);
         
+        if (cmp > 0) {
+        // Только branch1 новее
         char vr1[512], vr2[512];
         snprintf(vr1, sizeof(vr1), "%s-%s", v1 ? v1 : "", r1 ? r1 : "");
         snprintf(vr2, sizeof(vr2), "%s-%s", v2 ? v2 : "", r2 ? r2 : "");
-        
-        if (cmp > 0) {
-            // branch1 новее
-            json_array_append_new(newer1, json_pack("{s:s,s:s,s:s}", 
-                "name", key, "branch1", vr1, "branch2", vr2));
-        } else if (cmp < 0) {
-            // branch2 новее
-            json_array_append_new(newer2, json_pack("{s:s,s:s,s:s}", 
-                "name", key, "branch1", vr1, "branch2", vr2));
-        }
+        json_array_append_new(newer1, json_pack("{s:s,s:s,s:s}", 
+            "name", key, "branch1", vr1, "branch2", vr2));
+    }
     }
 
     json_object_foreach(map2, key, val) {
@@ -262,7 +257,7 @@ int alttest_compare_branches(const char* branch1,
     json_decref(root1); json_decref(root2);
     json_decref(map1); json_decref(map2);
 
-    json_t *out = json_pack("{s:s,s:s,s:s,s:i,s:i,s:o,s:o,s:o,s:o}",
+    json_t *out = json_pack("{s:s,s:s,s:s,s:i,s:i,s:o,s:o,s:o}",
         "branch1", branch1,
         "branch2", branch2,
         "arch", arch,
@@ -270,8 +265,7 @@ int alttest_compare_branches(const char* branch1,
         "total_branch2", (int)count2,
         "only_in_branch1", only1,
         "only_in_branch2", only2,
-        "newer_in_branch1", newer1,
-        "newer_in_branch2", newer2
+        "newer_in_branch1", newer1
     );
 
     *result_json = json_dumps(out, JSON_INDENT(2));
