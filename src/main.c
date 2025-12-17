@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 
     // Жёстко заданные ветки и архитектура для тестирования
     const char* branch1 = "p10";
-    const char* branch2 = "sisyphus";
+    const char* branch2 = "p9";
     const char* arch = "x86_64";
 
     printf("Comparing branches: %s vs %s, architecture: %s\n", branch1, branch2, arch);
