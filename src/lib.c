@@ -273,3 +273,12 @@ int alttest_compare_branches(const char* branch1,
 
     return (*result_json) ? 0 : -3;
 }
+// Public API для тестов 
+int alttest_rpmvercmp(const char *a, const char *b) {
+    return rpmvercmp(a, b);
+}
+
+int alttest_rpm_cmp(const char* v1, const char* r1, const char* v2, const char* r2) {
+    return rpm_cmp(v1, r1, v2, r2);
+}
+

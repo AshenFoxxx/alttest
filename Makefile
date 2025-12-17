@@ -32,6 +32,9 @@ $(BIN_NAME): $(SRC_BIN) $(LIB_REAL)
 $(TEST_BIN): src/test.c $(LIB_REAL)
 	$(CC) $(CFLAGS) -o $@ src/test.c -L. -lalttest $(LDFLAGS)
 
+
+
+
 clean:
 	rm -f $(LIB_REAL) $(LIB_SONAME) $(LIB_LINK) $(BIN_NAME) $(TEST_BIN)
 
